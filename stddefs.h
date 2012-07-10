@@ -21,13 +21,14 @@
 #define OUTPUT 0
 
 /**** DATA TYPES ****/
-#define UI32_t unsigned long
-#define UI16_t unsigned int
-#define UI08_t unsigned char
+// temporarely
+#define UI32_t volatile unsigned long
+#define UI16_t volatile unsigned int
+#define UI08_t volatile unsigned char
 
-#define SI32_t signed long
-#define SI16_t signed int
-#define SI08_t signed char
+#define SI32_t volatile  long
+#define SI16_t volatile signed int
+#define SI08_t volatile signed char
 #define PTR16(addr) ((UI16_t*)addr)
 #ifndef NULL
     #define NULL 0
