@@ -1,5 +1,6 @@
 
 #include "pps.h"
+#include "uart.h"
 
 #include "stddefs.h"
 
@@ -21,16 +22,15 @@ IOPort_t IOPorts[3] = {
 };
 
 #define CFG_RCDIV 0
+// Do not watch thse comments, i adjusted the config without updating them.
 _FBS(BWRP_WRPROTECT_OFF);      // No Boot Protect
 _FGS(GSS_OFF);              // No Code Protect
-_FOSCSEL(FNOSC_FRCPLL);            // Fast RC to start
+_FOSCSEL(FNOSC_FRC);            // Fast RC to start
 _FOSC(FCKSM_CSECMD & OSCIOFNC_OFF  & POSCMD_NONE);
 // Primary disabled, clock switch, no monitor, allow multiple IOLOCKs
 _FWDT(FWDTEN_OFF);            // Turn off Watchdog Timer
 _FPOR(FPWRT_PWR1);            // Power-up Timer to 16msecs
 _FICD(ICS_PGD2 & JTAGEN_OFF);   // Use PGC/D 2, no JTAG
-#define CLOCK_CPU 40000000
-#define CLOCK_PERIPHERAL CLOCK_CPU/2
 
 
 /** TAKEN FROM EXAMPLES*/
@@ -137,6 +137,12 @@ void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void)
 
 int main(void)
 {
+    CLKDIVbits.ROI = 0;
+    CLKDIVbits.DOZE = 0;
+    CLKDIVbits.DOZEN = 1; // divide by 2.
+    CLKDIVbits.FRCDIV = 0;
+    AD1PCFGL = 0xFFFF;
+    //CLKDIV
     FGPIO_Direction(PB, 1, OUTPUT);
     UI32_t i = 0;
 
@@ -146,8 +152,8 @@ int main(void)
     // MOSI     = RB8
     // MISO     = RB7
     // CS       = RB5
-    // TX       = RB14/RB15
-    // RX       = RB14/RB15
+    // TX       = RB15
+    // RX       = RB14
 
     // No SPI used, bit-bang now.
     FGPIO_Direction(PB, 5, OUTPUT);     // CS
@@ -155,17 +161,25 @@ int main(void)
     FGPIO_Direction(PB, 7, INPUT);     // MISO
     FGPIO_Direction(PB, 8, OUTPUT);     // MOSI
     FGPIO_Direction(PB, 9, INPUT);     // DR
-    FGPIO_Direction(PB, 14, INPUT);     //TX/RX
-    FGPIO_Direction(PB, 15, INPUT);     //TX/RX
+    FGPIO_Direction(PB, 14, INPUT);     //RX
+    FGPIO_Direction(PB, 15, OUTPUT);     //TX
+
+    __builtin_write_OSCCONL(OSCCON & 0xBF);
+    iPPSInput(IN_FN_PPS_U1RX, IN_PIN_PPS_RP14);
+    iPPSOutput(OUT_PIN_PPS_RP15, OUT_FN_PPS_U1TX);
+    __builtin_write_OSCCONL(OSCCON | 0x40);
+    Uart_Init(1);
+    printf("Hey!");
 
     // set all to zero
-    FGPIO_Write(PB,5,0);
-    FGPIO_Write(PB,6,0);
-    FGPIO_Write(PB,8,0);
+    FGPIO_Write(PB,5,1); // chipselect active-low
+    FGPIO_Write(PB,6,1); // clock
+    FGPIO_Write(PB,8,0); // data out
 
     while(1)
     {
-        
+        UI08_t b = Uart_RxByte(1);
+        Uart_TxByte(1,b);
         FGPIO_Write(PB,1,1);
         for(i=0; i<100000; i++);
         FGPIO_Write(PB,1,0);

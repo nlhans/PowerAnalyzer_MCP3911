@@ -41,11 +41,11 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/1217936139/main.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/1217936139/main.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/1217936139/main.o ${OBJECTDIR}/_ext/1217936139/UART.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/1217936139/main.o.d ${OBJECTDIR}/_ext/1217936139/UART.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/_ext/1217936139/main.o
+OBJECTFILES=${OBJECTDIR}/_ext/1217936139/main.o ${OBJECTDIR}/_ext/1217936139/UART.o
 
 
 CFLAGS=
@@ -75,12 +75,24 @@ ${OBJECTDIR}/_ext/1217936139/main.o: C:/Users/Hans/Documents/GitHub/PowerAnalyze
 	${MP_CC} $(MP_EXTRA_CC_PRE)  C:/Users/Hans/Documents/GitHub/PowerAnalyzer_MCP3911/main.c  -o ${OBJECTDIR}/_ext/1217936139/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/1217936139/main.o.d"    -g -D__DEBUG -D__MPLAB_DEBUGGER_PICKIT2=1  -omf=coff -O0 -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/_ext/1217936139/main.o.d" $(SILENT) 
 	
+${OBJECTDIR}/_ext/1217936139/UART.o: C:/Users/Hans/Documents/GitHub/PowerAnalyzer_MCP3911/UART.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/1217936139 
+	@${RM} ${OBJECTDIR}/_ext/1217936139/UART.o.d 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  C:/Users/Hans/Documents/GitHub/PowerAnalyzer_MCP3911/UART.c  -o ${OBJECTDIR}/_ext/1217936139/UART.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/1217936139/UART.o.d"    -g -D__DEBUG -D__MPLAB_DEBUGGER_PICKIT2=1  -omf=coff -O0 -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/_ext/1217936139/UART.o.d" $(SILENT) 
+	
 else
 ${OBJECTDIR}/_ext/1217936139/main.o: C:/Users/Hans/Documents/GitHub/PowerAnalyzer_MCP3911/main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/1217936139 
 	@${RM} ${OBJECTDIR}/_ext/1217936139/main.o.d 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  C:/Users/Hans/Documents/GitHub/PowerAnalyzer_MCP3911/main.c  -o ${OBJECTDIR}/_ext/1217936139/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/1217936139/main.o.d"    -g -omf=coff -O0 -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/_ext/1217936139/main.o.d" $(SILENT) 
+	
+${OBJECTDIR}/_ext/1217936139/UART.o: C:/Users/Hans/Documents/GitHub/PowerAnalyzer_MCP3911/UART.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/1217936139 
+	@${RM} ${OBJECTDIR}/_ext/1217936139/UART.o.d 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  C:/Users/Hans/Documents/GitHub/PowerAnalyzer_MCP3911/UART.c  -o ${OBJECTDIR}/_ext/1217936139/UART.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/1217936139/UART.o.d"    -g -omf=coff -O0 -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/_ext/1217936139/UART.o.d" $(SILENT) 
 	
 endif
 

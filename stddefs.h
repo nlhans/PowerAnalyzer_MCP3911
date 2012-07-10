@@ -2,6 +2,8 @@
 #define TRITON_STDDEFS_H
 
 #include <stdio.h>
+#define CLOCK_CPU 40000000
+#define CLOCK_PERIPHERAL CLOCK_CPU/2
 
 #define GPIO_Write_PA LATA
 #define GPIO_Write_PB LATB
