@@ -140,8 +140,32 @@ int main(void)
     FGPIO_Direction(PB, 1, OUTPUT);
     UI32_t i = 0;
 
+    // I/O Configuration:
+    // DR       = RB9
+    // SCK      = RB6
+    // MOSI     = RB8
+    // MISO     = RB7
+    // CS       = RB5
+    // TX       = RB14/RB15
+    // RX       = RB14/RB15
+
+    // No SPI used, bit-bang now.
+    FGPIO_Direction(PB, 5, OUTPUT);     // CS
+    FGPIO_Direction(PB, 6, OUTPUT);     // SCK
+    FGPIO_Direction(PB, 7, INPUT);     // MISO
+    FGPIO_Direction(PB, 8, OUTPUT);     // MOSI
+    FGPIO_Direction(PB, 9, INPUT);     // DR
+    FGPIO_Direction(PB, 14, INPUT);     //TX/RX
+    FGPIO_Direction(PB, 15, INPUT);     //TX/RX
+
+    // set all to zero
+    FGPIO_Write(PB,5,0);
+    FGPIO_Write(PB,6,0);
+    FGPIO_Write(PB,8,0);
+
     while(1)
     {
+        
         FGPIO_Write(PB,1,1);
         for(i=0; i<100000; i++);
         FGPIO_Write(PB,1,0);
