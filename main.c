@@ -135,6 +135,95 @@ void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void)
         while (1);
 }
 
+const UI08_t device_ID = 0; // stupid device ID rubbish.
+
+/**** REGISTER MAP ***/
+typedef struct MCP3911_Register_s
+{
+    UI08_t addr;
+    UI08_t size;
+} MCP3911_Register_t;
+
+MCP3911_Register_t MCP3911_RegisterMap[12] = {
+    {0x00, 24}, // Channel 0 data
+    {0x03, 24}, // Channel 1 data
+    {0x06, 8}, // Modulation output
+    {0x07, 16}, // Phase delay
+    {0x09, 8}, // Gain/Boost
+    {0x0A, 16}, // Status & Communication settings
+    {0x0C, 16}, // Configuration
+    {0x0E, 24}, // Offset correction, channel 0,
+    {0x11, 24}, // Gain correction, channel 0
+    {0x14, 24}, // Offset correction, channel 1
+    {0x17, 24}, // Gain correction, channel 1
+    {0x1A, 8}, // VREF Temperature coefficient.
+};
+typedef enum MCP3911_RegisterName_s
+{
+    MCP3911_REGS_CHANNEL0,
+    MCP3911_REGS_CHANNEL1,
+    MCP3911_REGS_MOD,
+    MCP3911_REGS_PHASE,
+    MCP3911_REGS_GAIN,
+    MCP3911_REGS_STATUSCOM,
+    MCP3911_REGS_CONFIG,
+    MCP3911_REGS_OFFCAL_CH0,
+    MCP3911_REGS_GAINCAL_CH0,
+    MCP3911_REGS_OFFCAL_CH1,
+    MCP3911_REGS_GAINCAL_CH1,
+    MCP3911_REGS_VREFCAL
+} MCP3911_RegisterName_e;
+
+UI08_t MCP3911_TransferByte(UI08_t data)
+{
+    UI08_t read = 0;
+    UI08_t i = 0;
+
+
+    for(i = 0; i < 8; i++)
+    {
+        if((data >> i) & 0x1)
+            // bit is high
+        {
+            FGPIO_Write(PB, 8, 1);
+        }
+        else
+        {
+            FGPIO_Write(PB, 8, 0);
+        }
+        FGPIO_Write(PB, 6, 0); // data is clocked out at falling edge.
+        if (FGPIO_Read(PB, 7)){ // it is high!
+            read |= 1<<i; // set this bit high.
+        }
+        FGPIO_Write(PB, 6, 1); // data is clocked in at rising edge.
+
+    }
+    return read;
+}
+
+void MCP3911_WriteRegister(MCP3911_RegisterName_e reg, UI32_t data)
+{
+    UI08_t addr = MCP3911_RegisterMap[reg].addr;
+    UI08_t size = MCP3911_RegisterMap[reg].size;
+    UI08_t size_bytes = size/8;
+
+    // Write address.
+    MCP3911_TransferByte(((addr << 1) | 0x0));
+
+    while(size_bytes >= 1)
+    {
+        MCP3911_TransferByte((UI08_t)(data & 0xFF));
+        data = data >> 8;
+        size_bytes --;
+    }
+}
+
+void MCP3911_Setup(void)
+{
+    // Setup to convert 2 channels at 1KSPS.
+
+}
+
 int main(void)
 {
     CLKDIVbits.ROI = 0;
