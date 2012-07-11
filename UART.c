@@ -9,7 +9,7 @@ void  Uart_Init(UI08_t id)
     switch(id)
     {
         case 1:
-            U1BRG = 23;// CLOCK_PERIPHERAL / (16* (UI32_t)9600 )-1;
+            U1BRG = 3;// CLOCK_PERIPHERAL / (16* (UI32_t)9600 )-1;
             U1MODE	=	0x8000;
             U1STA	=	0x8400;
             IFS0bits.U1RXIF = 0;

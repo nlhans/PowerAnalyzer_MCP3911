@@ -160,18 +160,18 @@ MCP3911_Register_t MCP3911_RegisterMap[12] = {
 };
 typedef enum MCP3911_RegisterName_s
 {
-    MCP3911_REGS_CHANNEL0,
-    MCP3911_REGS_CHANNEL1,
-    MCP3911_REGS_MOD,
-    MCP3911_REGS_PHASE,
-    MCP3911_REGS_GAIN,
-    MCP3911_REGS_STATUSCOM,
-    MCP3911_REGS_CONFIG,
-    MCP3911_REGS_OFFCAL_CH0,
-    MCP3911_REGS_GAINCAL_CH0,
-    MCP3911_REGS_OFFCAL_CH1,
-    MCP3911_REGS_GAINCAL_CH1,
-    MCP3911_REGS_VREFCAL
+    MCP3911_REGS_CHANNEL0,      //0x0
+    MCP3911_REGS_CHANNEL1,      //0x1
+    MCP3911_REGS_MOD,           //0x2
+    MCP3911_REGS_PHASE,         //0x3
+    MCP3911_REGS_GAIN,          //0x4
+    MCP3911_REGS_STATUSCOM,     //0x5
+    MCP3911_REGS_CONFIG,        //0x6
+    MCP3911_REGS_OFFCAL_CH0,    //0x7
+    MCP3911_REGS_GAINCAL_CH0,   //0x8
+    MCP3911_REGS_OFFCAL_CH1,    //0x9
+    MCP3911_REGS_GAINCAL_CH1,   //0xA
+    MCP3911_REGS_VREFCAL        //0xB
 } MCP3911_RegisterName_e;
 #define MCP3911_REGNUMS ((UI08_t)MCP3911_REGS_VREFCAL)
 
@@ -248,12 +248,12 @@ void MCP3911_WriteRegister(MCP3911_RegisterName_e reg, UI32_t data)
     FGPIO_Write(PB,5,0); // chipselect active-low
     MCP3911_TransferByte(((addr << 1) | MCP3911_ADDR_WRITE)); // 1 or 0?
 
-    while(size_bytes >= 1 && size_bytes < 10)
-    {
-        MCP3911_TransferByte((UI08_t)(data & 0xFF));
-        data = data >> 8;
-        size_bytes --;
-    }
+    if(size_bytes == 3)
+        MCP3911_TransferByte((UI08_t)((data >> 16)&0xFF));
+    if(size_bytes == 2)
+        MCP3911_TransferByte((UI08_t)((data >> 8)&0xFF));
+    if(size_bytes == 1)
+        MCP3911_TransferByte((UI08_t)((data >> 0)&0xFF));
     FGPIO_Write(PB,5,1); // chipselect active-low
 }
 
@@ -262,7 +262,9 @@ void MCP3911_Setup(void)
     MCP3911_ReadRegister(MCP3911_REGS_CHANNEL0);
     MCP3911_ReadRegister(MCP3911_REGS_CHANNEL1);
     // Setup to convert 2 channels at 1KSPS.
-    MCP3911_WriteRegister(MCP3911_REGS_GAIN, 0b11101101);
+    MCP3911_WriteRegister(MCP3911_REGS_STATUSCOM,   0b0001001110111000);
+    MCP3911_WriteRegister(MCP3911_REGS_GAIN,        0b10000000); // boost 1x, gain 1x (ch0+1)
+    MCP3911_WriteRegister(MCP3911_REGS_CONFIG,      0b0101100000000010);
 
 }
 
@@ -276,6 +278,18 @@ void MCP3911_Dump(void)
         UI32_t data  =MCP3911_ReadRegister(i );
         printf("0x%X: 0x%X %X\r\n", i, (UI16_t) (data&0xFFFF), (UI16_t)(data >> 16));
     }
+    
+}
+
+void MCP3911_Sample(void)
+{
+    UI32_t a = (MCP3911_ReadRegister(0));
+    UI32_t b = (MCP3911_ReadRegister(1));
+    UI16_t a1 = (a>>16)&0xFFFF;
+    UI16_t a2 = a&0xFFFF;
+    UI16_t b1 = (b>>16)&0xFFFF;
+    UI16_t b2 = b&0xFFFF;
+    printf("%X,%X\r\n", a2,b2);
     
 }
 
@@ -295,19 +309,22 @@ int main(void)
     // SCK      = RB6
     // MOSI     = RB8
     // MISO     = RB7
+    // CLKO     = RB2
     // CS       = RB5
     // TX       = RB15
     // RX       = RB14
-    // CLKI     = RC6
 
+    // Logic1 & Logic2 are logic probes of PICKIT2
+    
     // No SPI used, bit-bang now.
-    FGPIO_Direction(PB, 5, OUTPUT);     // CS
-    FGPIO_Direction(PB, 6, OUTPUT);     // SCK
-    FGPIO_Direction(PB, 7, INPUT);     // MISO
-    FGPIO_Direction(PB, 8, OUTPUT);     // MOSI
-    FGPIO_Direction(PB, 9, INPUT);     // DR
-    FGPIO_Direction(PB, 14, INPUT);     //RX
-    FGPIO_Direction(PB, 15, OUTPUT);     //TX
+    FGPIO_Direction(PB, 5, OUTPUT);      // CS
+    FGPIO_Direction(PB, 6, OUTPUT);      // SCK
+    FGPIO_Direction(PB, 7, INPUT);       // MISO
+    FGPIO_Direction(PB, 8, OUTPUT);      // MOSI
+    FGPIO_Direction(PB, 2, OUTPUT);      // CLKO (CLKI@MCP3911)
+    FGPIO_Direction(PB, 9, INPUT);       // DR
+    FGPIO_Direction(PB, 14, INPUT);      // RX
+    FGPIO_Direction(PB, 15, OUTPUT);     // TX
 
     FGPIO_Direction(PB, 10, OUTPUT);     // logic1
     FGPIO_Direction(PB, 11, OUTPUT);     // logic2
@@ -315,10 +332,31 @@ int main(void)
     __builtin_write_OSCCONL(OSCCON & 0xBF);
     iPPSInput(IN_FN_PPS_U1RX, IN_PIN_PPS_RP14);
     iPPSOutput(OUT_PIN_PPS_RP15, OUT_FN_PPS_U1TX);
+    iPPSOutput(OUT_PIN_PPS_RP2, OUT_FN_PPS_OC1);
     __builtin_write_OSCCONL(OSCCON | 0x40);
     Uart_Init(1);
 
-    printf("Hey!");
+    printf("**************************************\r\n");
+    printf("**  DC power analyzer MCP3911 test! **\r\n");
+    printf("**************************************\r\n");
+    
+
+    // Initialize Output Compare Module
+    OC1CONbits.OCM = 0b000; // Disable Output Compare Module
+    OC1R = 1; // Write the duty cycle for the first PWM pulse
+    OC1RS = 3; // Write the duty cycle for the second PWM pulse
+    OC1CONbits.OCTSEL = 0; // Select Timer 2 as output compare time base
+    OC1R = 3; // Load the Compare Register Value
+    OC1CONbits.OCM = 0b110; // Select the Output Compare mode
+    // Initialize and enable Timer2
+    T2CONbits.TON = 0; // Disable Timer
+    T2CONbits.TCS = 0; // Select internal instruction cycle clock
+    T2CONbits.TGATE = 0; // Disable Gated Timer mode
+    T2CONbits.TCKPS = 0b00; // Select 1:1 Prescaler
+    TMR2 = 0x00; // Clear timer register
+    PR2 = 4; // Load the period value
+    IEC0bits.T2IE = 0; // Disable Timer 2 interrupt
+    T2CONbits.TON = 1; // Start Timer
 
     // set all to zero
     FGPIO_Write(PB,5,1); // chipselect active-low
@@ -326,14 +364,13 @@ int main(void)
     FGPIO_Write(PB,8,0); // data out
 
     MCP3911_Setup();
+    MCP3911_Dump();
 
     while(1)
     {
-        FGPIO_Write(PB,1,1);
-        for(i=0; i<100000; i++);
-        FGPIO_Write(PB,1,0);
-        for(i=0; i<100000; i++);
-        MCP3911_Dump();
+        if(FGPIO_Read(PB, 9) == 0)
+            MCP3911_Sample();
+        
     }
 
     return 0;
