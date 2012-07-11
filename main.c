@@ -175,10 +175,13 @@ typedef enum MCP3911_RegisterName_s
 } MCP3911_RegisterName_e;
 #define MCP3911_REGNUMS ((UI08_t)MCP3911_REGS_VREFCAL)
 
+#define MCP3911_ADDR_READ 1
+#define MCP3911_ADDR_WRITE 0
+
 void Delay(void)
 {
     UI08_t i =0;
-    for( i = 0; i < 9;i++);
+    for( i = 0; i < 3;i++);
 }
 
 UI08_t MCP3911_TransferByte(UI08_t data)
@@ -187,46 +190,29 @@ UI08_t MCP3911_TransferByte(UI08_t data)
     SI08_t i = 0;
 
 
-    FGPIO_Write(PB, 6, 0); // data is clocked out at falling edge.
-    FGPIO_Write(PB, 10, 0);
+    FGPIO_Write(PB, 6, 0);
+
     for(i = 7; i >= 0; i--)
     {
-        if(data!= 0){
+
         if((data >> i) & 0x1) // bit is high
         {
             FGPIO_Write(PB, 8, 1);
-            FGPIO_Write(PB, 11, 1);
         }
         else
         {
             FGPIO_Write(PB, 8, 0);
-            FGPIO_Write(PB, 11, 0);
         }
-        }
-        Delay();
-        FGPIO_Write(PB, 10, 1);
-        FGPIO_Write(PB, 6, 1); // data is clocked in at rising edge.
-        Delay();
-        FGPIO_Write(PB, 6, 0); // data is clocked out at falling edge.
-        FGPIO_Write(PB, 10, 0);
-        if(data== 0){
-        if((PORTB >> 7) & 0x1){
-        //if (FGPIO_Read(PB, 7) != 0){ // it is high!
-            read |= 1<<i; // set this bit high.
-            FGPIO_Write(PB, 11, 1);
-            //printf(":d");
-        }else{
-            FGPIO_Write(PB, 11, 0);
-        }}
 
+        FGPIO_Write(PB, 6, 1);
+
+        asm volatile("nop");
+        FGPIO_Write(PB, 6, 0);
+
+        if (FGPIO_Read(PB, 7))
+            read |= (1<<i); // set this bit high.
     }
-        Delay();
-        Delay();
-        Delay();
-        Delay();
-        Delay();
-    FGPIO_Write(PB, 10, 0);
-    FGPIO_Write(PB, 6, 0); // data is clocked out at falling edge.
+
     return read;
 }
 
@@ -238,15 +224,13 @@ UI32_t MCP3911_ReadRegister(MCP3911_RegisterName_e reg)
     UI08_t size_bytes = size/8;
 
     FGPIO_Write(PB,5,0); // chipselect active-low
-    MCP3911_TransferByte(((addr << 1) + 0x0)); // 1 or 0?
+    MCP3911_TransferByte(((addr << 1) | MCP3911_ADDR_READ)); // 1 or 0?
 
     while(size_bytes != 0)
     {
         read = read << 8;
-        UI08_t d = MCP3911_TransferByte(0);
-        read |= d;
+        read |= MCP3911_TransferByte(0);
         size_bytes --;
-        if(size_bytes == 0) break;
     }
     FGPIO_Write(PB,5,1); // chipselect active-low
 
@@ -262,7 +246,7 @@ void MCP3911_WriteRegister(MCP3911_RegisterName_e reg, UI32_t data)
 
     // Write address.
     FGPIO_Write(PB,5,0); // chipselect active-low
-    MCP3911_TransferByte(((addr << 1) | 0x0)); // 1 or 0?
+    MCP3911_TransferByte(((addr << 1) | MCP3911_ADDR_WRITE)); // 1 or 0?
 
     while(size_bytes >= 1 && size_bytes < 10)
     {
@@ -275,7 +259,10 @@ void MCP3911_WriteRegister(MCP3911_RegisterName_e reg, UI32_t data)
 
 void MCP3911_Setup(void)
 {
+    MCP3911_ReadRegister(MCP3911_REGS_CHANNEL0);
+    MCP3911_ReadRegister(MCP3911_REGS_CHANNEL1);
     // Setup to convert 2 channels at 1KSPS.
+    MCP3911_WriteRegister(MCP3911_REGS_GAIN, 0b11101101);
 
 }
 
@@ -300,7 +287,7 @@ int main(void)
     CLKDIVbits.FRCDIV = 0;
     AD1PCFGL = 0xFFFF;
     //CLKDIV
-    FGPIO_Direction(PB, 1, OUTPUT);
+    FGPIO_Direction(PB, 1, OUTPUT); // blinky led
     UI32_t i = 0;
 
     // I/O Configuration:
@@ -311,6 +298,7 @@ int main(void)
     // CS       = RB5
     // TX       = RB15
     // RX       = RB14
+    // CLKI     = RC6
 
     // No SPI used, bit-bang now.
     FGPIO_Direction(PB, 5, OUTPUT);     // CS
@@ -323,18 +311,21 @@ int main(void)
 
     FGPIO_Direction(PB, 10, OUTPUT);     // logic1
     FGPIO_Direction(PB, 11, OUTPUT);     // logic2
-
+    
     __builtin_write_OSCCONL(OSCCON & 0xBF);
     iPPSInput(IN_FN_PPS_U1RX, IN_PIN_PPS_RP14);
     iPPSOutput(OUT_PIN_PPS_RP15, OUT_FN_PPS_U1TX);
     __builtin_write_OSCCONL(OSCCON | 0x40);
     Uart_Init(1);
+
     printf("Hey!");
 
     // set all to zero
     FGPIO_Write(PB,5,1); // chipselect active-low
     FGPIO_Write(PB,6,0); // clock
     FGPIO_Write(PB,8,0); // data out
+
+    MCP3911_Setup();
 
     while(1)
     {

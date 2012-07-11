@@ -7,10 +7,13 @@
 
 #define GPIO_Write_PA LATA
 #define GPIO_Write_PB LATB
+#define GPIO_Write_PC LATC
 #define GPIO_Read_PA PORTA
 #define GPIO_Read_PB PORTB
+#define GPIO_Read_PC PORTC
 #define GPIO_Tris_PA TRISA
 #define GPIO_Tris_PB TRISB
+#define GPIO_Tris_PC TRISC
 #define GPIO_Direction_Input 1
 #define GPIO_Direction_Output 0
 #define GPIO_Direction_INPUT 1
@@ -83,7 +86,7 @@ typedef struct IOPort_s
 	#define FGPIO_Write0(port, pin) GPIO_Write_##port &= ~(1U << pin)
 #endif
 
-#define FGPIO_Read(port, pin) ((GPIO_Write_##port>>pin) & 0x1)
+#define FGPIO_Read(port, pin) ((GPIO_Read_##port>>pin) & 0x1)
 #define FGPIO_Direction(port, pin, dir) if(GPIO_Direction_##dir) \
 { \
     GPIO_Tris_##port  |= 1<<pin; \
