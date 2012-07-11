@@ -248,11 +248,11 @@ void MCP3911_WriteRegister(MCP3911_RegisterName_e reg, UI32_t data)
     FGPIO_Write(PB,5,0); // chipselect active-low
     MCP3911_TransferByte(((addr << 1) | MCP3911_ADDR_WRITE)); // 1 or 0?
 
-    if(size_bytes == 3)
+    if(size_bytes >= 3)
         MCP3911_TransferByte((UI08_t)((data >> 16)&0xFF));
-    if(size_bytes == 2)
+    if(size_bytes >= 2)
         MCP3911_TransferByte((UI08_t)((data >> 8)&0xFF));
-    if(size_bytes == 1)
+    if(size_bytes >= 1)
         MCP3911_TransferByte((UI08_t)((data >> 0)&0xFF));
     FGPIO_Write(PB,5,1); // chipselect active-low
 }
@@ -263,7 +263,7 @@ void MCP3911_Setup(void)
     MCP3911_ReadRegister(MCP3911_REGS_CHANNEL1);
     // Setup to convert 2 channels at 1KSPS.
     MCP3911_WriteRegister(MCP3911_REGS_STATUSCOM,   0b0001001110111000);
-    MCP3911_WriteRegister(MCP3911_REGS_GAIN,        0b10000000); // boost 1x, gain 1x (ch0+1)
+    MCP3911_WriteRegister(MCP3911_REGS_GAIN,        0b10001001); // boost 1x, gain 1x (ch0+1)
     MCP3911_WriteRegister(MCP3911_REGS_CONFIG,      0b0101100000000010);
 
 }
