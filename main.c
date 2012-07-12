@@ -262,9 +262,9 @@ void MCP3911_Setup(void)
     MCP3911_ReadRegister(MCP3911_REGS_CHANNEL0);
     MCP3911_ReadRegister(MCP3911_REGS_CHANNEL1);
     // Setup to convert 2 channels at 1KSPS.
-    MCP3911_WriteRegister(MCP3911_REGS_STATUSCOM,   0b0001001110111000);
-    MCP3911_WriteRegister(MCP3911_REGS_GAIN,        0b10001001); // boost 1x, gain 1x (ch0+1)
-    MCP3911_WriteRegister(MCP3911_REGS_CONFIG,      0b0101100000000010);
+    MCP3911_WriteRegister(MCP3911_REGS_STATUSCOM,   0b0000001110111000);
+    MCP3911_WriteRegister(MCP3911_REGS_GAIN,        0b10000000); // boost 1x, gain 1x (ch0+1)
+    MCP3911_WriteRegister(MCP3911_REGS_CONFIG,      0b0011011000000010);
 
 }
 
@@ -281,15 +281,17 @@ void MCP3911_Dump(void)
     
 }
 
+SI32_t a1;
+SI32_t b1;
 void MCP3911_Sample(void)
 {
-    UI32_t a = (MCP3911_ReadRegister(0));
-    UI32_t b = (MCP3911_ReadRegister(1));
-    UI16_t a1 = (a>>16)&0xFFFF;
-    UI16_t a2 = a&0xFFFF;
-    UI16_t b1 = (b>>16)&0xFFFF;
-    UI16_t b2 = b&0xFFFF;
-    printf("%X,%X\r\n", a2,b2);
+    SI32_t a = (MCP3911_ReadRegister(0));
+    SI32_t b = (MCP3911_ReadRegister(1));
+    if(a!= a1 && b!=b1){
+        printf("%ld,%ld\r\n", a, b);
+        a1 = a;
+        b1 = b;
+    }
     
 }
 
@@ -343,10 +345,10 @@ int main(void)
 
     // Initialize Output Compare Module
     OC1CONbits.OCM = 0b000; // Disable Output Compare Module
-    OC1R = 1; // Write the duty cycle for the first PWM pulse
-    OC1RS = 3; // Write the duty cycle for the second PWM pulse
+    OC1R =0; // Write the duty cycle for the first PWM pulse
+    OC1RS =1; // Write the duty cycle for the second PWM pulse
     OC1CONbits.OCTSEL = 0; // Select Timer 2 as output compare time base
-    OC1R = 3; // Load the Compare Register Value
+    OC1R = 1; // Load the Compare Register Value
     OC1CONbits.OCM = 0b110; // Select the Output Compare mode
     // Initialize and enable Timer2
     T2CONbits.TON = 0; // Disable Timer
@@ -354,7 +356,7 @@ int main(void)
     T2CONbits.TGATE = 0; // Disable Gated Timer mode
     T2CONbits.TCKPS = 0b00; // Select 1:1 Prescaler
     TMR2 = 0x00; // Clear timer register
-    PR2 = 4; // Load the period value
+    PR2 = 1; // Load the period value
     IEC0bits.T2IE = 0; // Disable Timer 2 interrupt
     T2CONbits.TON = 1; // Start Timer
 
@@ -368,8 +370,7 @@ int main(void)
 
     while(1)
     {
-        if(FGPIO_Read(PB, 9) == 0)
-            MCP3911_Sample();
+        MCP3911_Sample();
         
     }
 
