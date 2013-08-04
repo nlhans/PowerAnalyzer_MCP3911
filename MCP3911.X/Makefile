@@ -54,6 +54,7 @@ RANLIB=ranlib
 build: .build-post
 
 .build-pre:
+	"C:/Users/Hans/Documents/Toolz/CodeInsight/CodeInsight/makefile_number/bin/Debug/makefile_number.exe"
 # Add your pre 'build' code here...
 
 .build-post: .build-impl

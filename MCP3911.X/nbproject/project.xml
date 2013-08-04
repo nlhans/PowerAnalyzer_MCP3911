@@ -3,12 +3,12 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>PowerAnalyzer</name>
-            <creation-uuid>8e6a7c74-2d9e-4e8d-91ed-84ef277600cd</creation-uuid>
+            <name>MCP3911</name>
+            <creation-uuid>8b22ef23-5359-4915-9799-c4776f5b80d6</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>
             <cpp-extensions/>
-            <header-extensions>h</header-extensions>
+            <header-extensions/>
             <sourceEncoding>ISO-8859-1</sourceEncoding>
             <make-dep-projects/>
         </data>
